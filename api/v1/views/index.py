@@ -12,8 +12,8 @@ def get_status():
     return jsonify({"status": "OK"})
 
 
-@app_views.route('/stats', methods=['GET'])
-def get_stats():
+@app_views.route('/stats', strict_slashes=False)
+def count_objs():
     """Retrieves the number of each objects by type"""
     stats = {
         "amenities": storage.count("Amenity"),
