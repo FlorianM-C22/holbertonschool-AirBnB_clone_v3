@@ -4,20 +4,22 @@
 from flask import jsonify, request, abort
 from models import storage
 from models.city import City
+from models.state import State
 from api.v1.views import app_views
 
 
-@app_views.route('/cities', methods=['GET'], strict_slashes=False)
-def get_cities():
-    """Retrieves the list of all City objects"""
-    cities = storage.all(City).values()
-    if cities is None:
+@app_views.route(
+        "/states/<state_id>/cities", methods=["GET"], strict_slashes=False)
+def get_cities_by_states(state_id):
+    """Retrieve the list of all cities"""
+    states_get = storage.get(State, state_id)
+    if states_get is None:
         abort(404)
-    city_dict = []
-    for city in cities:
-        all_cities = city.to_dict()
-        city_dict.append(all_cities)
-    return jsonify(city_dict)
+    cities_dict = []
+    for city_get in states_get.cities:
+        all_city = city_get.to_dict()
+        cities_dict.append(all_city)
+    return jsonify(cities_dict)
 
 
 @app_views.route('/cities/<city_id>', methods=['GET'], strict_slashes=False)
@@ -33,24 +35,27 @@ def get_city(city_id):
     '/cities/<city_id>', methods=['DELETE'], strict_slashes=False)
 def delete_city(city_id):
     """Deletes a City object"""
-    city = storage.get(City, city_id)
-    if city is None:
+    city_del = storage.get(City, city_id)
+    if city_del is None:
         abort(404)
-    storage.delete(city)
+    storage.delete(city_del)
     storage.save()
     return jsonify({}), 200
 
 
-@app_views.route('/cities', methods=['POST'], strict_slashes=False)
-def create_city():
+@app_views.route(
+        '/states/<state_id>/cities', methods=['POST'], strict_slashes=False)
+def create_city(state_id):
     """Create a new City object"""
+    state = storage.get(State, state_id)
     data = request.get_json()
-    if data is None:
-        return jsonify({"error": "Not a JSON"}), 400
-
-    if 'name' not in data:
-        return jsonify({"error": "Missing name"}), 400
-
+    if state is None:
+        abort(404)
+    elif not data:
+        abort(400, "Not a JSON")
+    elif 'name' not in data:
+        abort(400, "Missing name")
+    data['state_id'] = state_id
     new_city = City(**data)
     new_city.save()
     return jsonify(new_city.to_dict()), 201
@@ -60,15 +65,13 @@ def create_city():
 def update_city(city_id):
     """Update a City object"""
     city_get = storage.get(City, city_id)
-    if city_get is None:
-        abort(404)
-
     data = request.get_json()
-    if data is None:
-        return jsonify({"error": "Not a JSON"}), 400
-
+    if not city_get:
+        abort(400, "Not a JSON")
+    elif not data:
+        abort(400, "Not a JSON")
     for key, value in data.items():
-        if key not in ['id', 'created_at', 'updated_at']:
+        if key not in ['id', 'state_id', 'created_at', 'updated_at']:
             setattr(city_get, key, value)
 
     storage.save()
