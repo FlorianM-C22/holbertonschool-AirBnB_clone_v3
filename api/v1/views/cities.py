@@ -1,11 +1,10 @@
 #!/usr/bin/python3
-"""Cities module for AirBnB clone API v1"""
-
-from flask import jsonify, request, abort
-from models import storage
+"""State API views"""
+from flask import abort, jsonify, request
+from api.v1.views import app_views
 from models.city import City
 from models.state import State
-from api.v1.views import app_views
+from models import storage
 
 
 @app_views.route(
@@ -22,23 +21,23 @@ def get_cities_by_states(state_id):
     return jsonify(cities_dict)
 
 
-@app_views.route('/cities/<city_id>', methods=['GET'], strict_slashes=False)
+@app_views.route("/cities/<city_id>", methods=["GET"], strict_slashes=False)
 def get_city(city_id):
-    """Retrieves a City object"""
-    city = storage.get(City, city_id)
-    if city is None:
+    """Retrieve a City object by ID"""
+    city_get = storage.get(City, city_id)
+    if city_get is None:
         abort(404)
-    return jsonify(city.to_dict())
+    return jsonify(city_get.to_dict())
 
 
 @app_views.route(
-    '/cities/<city_id>', methods=['DELETE'], strict_slashes=False)
+        "/cities/<city_id>", methods=["DELETE"], strict_slashes=False)
 def delete_city(city_id):
-    """Deletes a City object"""
-    city_del = storage.get(City, city_id)
-    if city_del is None:
+    """Delete a City object by ID"""
+    city_delete = storage.get(City, city_id)
+    if city_delete is None:
         abort(404)
-    storage.delete(city_del)
+    storage.delete(city_delete)
     storage.save()
     return jsonify({}), 200
 
